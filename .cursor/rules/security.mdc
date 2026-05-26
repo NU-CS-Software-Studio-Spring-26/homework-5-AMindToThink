@@ -1,0 +1,14 @@
+---
+description: Security rules for the sample todo app
+alwaysApply: true
+---
+
+- Never write, log, or echo secrets, API keys, or production credentials. `config/master.key`,
+  `config/credentials.yml.enc`, and `.kamal/secrets` must never be read into context, printed,
+  or committed in plaintext.
+- Never call `eval`, `instance_eval`, `class_eval`, or `send`/`public_send` on user-controlled input.
+- Never call `html_safe` or `raw` on untrusted input; rely on ERB's automatic HTML escaping.
+- Build queries with Active Record finders or parameterized conditions
+  (e.g. `where("description = ?", params[:q])`); never string-interpolate user input into SQL.
+- Do not disable CSRF protection (`skip_before_action :verify_authenticity_token`) or strong
+  parameters, and do not weaken any session/authentication checks added later.
