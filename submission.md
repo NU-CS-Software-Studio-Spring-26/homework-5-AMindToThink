@@ -1,6 +1,6 @@
 # Homework 5 — Leveling up AI-Assisted Software Development
 
-**Repo / branch:** work is on the `hw5` branch of this GitHub Classroom repository.
+**Repo / branch:** work is on the [`hw5` branch](https://github.com/NU-CS-Software-Studio-Spring-26/homework-5-AMindToThink/tree/hw5) of this [GitHub Classroom repository](https://github.com/NU-CS-Software-Studio-Spring-26/homework-5-AMindToThink).
 
 > **Editor note (adaptation):** The assignment is written for Cursor, which it
 > explicitly permits adapting to another editor. I completed it using **Claude
