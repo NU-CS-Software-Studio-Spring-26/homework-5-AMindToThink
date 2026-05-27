@@ -159,7 +159,7 @@ result: No todos index filter exists yet — `TodosController#index` (`app/contr
 
 > "I want to change how a todo gets marked done so that **only the user who created a todo can mark it done; other authenticated users can see it but cannot toggle it**. Propose a plan as a numbered list of changes, including files to edit, new tests to add, and any migration. Do not write code."
 
-**Plan I got back.** It first established the gap: the app has *no authentication* (no `User`/`Session`, `bcrypt` commented out), *no done-state* (the `todos` table is just `description`/`due_date`/timestamps), and *no ownership* (no `user_id`, no `belongs_to :user`). So the rule can't be a one-line tweak — it has to stand up auth, ownership, and a done flag, then gate the toggle. Stated decisions: (a) Rails 8 built-in auth via `bin/rails generate authentication`; (b) only the done-toggle is owner-gated, everything else stays open to any logged-in user; (c) a dedicated `PATCH /todos/:id/toggle_done` action guarded by an owner `before_action`.
+**Plan I got back.** It first established the gap: the app has _no authentication_ (no `User`/`Session`, `bcrypt` commented out), _no done-state_ (the `todos` table is just `description`/`due_date`/timestamps), and _no ownership_ (no `user_id`, no `belongs_to :user`). So the rule can't be a one-line tweak — it has to stand up auth, ownership, and a done flag, then gate the toggle. Stated decisions: (a) Rails 8 built-in auth via `bin/rails generate authentication`; (b) only the done-toggle is owner-gated, everything else stays open to any logged-in user; (c) a dedicated `PATCH /todos/:id/toggle_done` action guarded by an owner `before_action`.
 
 1. **Generate authentication** — run `bin/rails generate authentication` (User/Session/Current, sessions & passwords controllers, `Authentication` concern, login views), uncomment `bcrypt`, add `has_many :todos` to `User`, migrate.
 2. **Add `root "todos#index"`** — the concern's `after_authentication_url` falls back to `root_url`, and the generated `SessionsControllerTest` asserts a redirect there.
@@ -174,12 +174,12 @@ Plus a verification section (`bin/rails test`, `bin/rails test:system`, a manual
 
 **My edits to the plan** (where I tightened / removed / corrected):
 
-1. **Removed the `current_user` waffle.** The plan offered an *optional* 4-line `current_user` helper "or just use `Current.user`" and then used both. I deleted the helper option and committed to `Current.user` everywhere — one convention, nothing to keep in sync.
+1. **Removed the `current_user` waffle.** The plan offered an _optional_ 4-line `current_user` helper "or just use `Current.user`" and then used both. I deleted the helper option and committed to `Current.user` everywhere — one convention, nothing to keep in sync.
 2. **Tightened the toggle to HTML-only.** The returned `toggle_done` and `require_owner` each carried a `respond_to` block with an extra `format.json` branch (and the test plan said "test both HTML and JSON paths"). Since the toggle is a plain HTML `button_to`, I dropped the JSON branches and the doubled test matrix:
    - `toggle_done`: from `respond_to { html redirect_back…; json render :show }` down to a single `redirect_to @todo, notice: "Todo updated."`.
    - `require_owner`: from `respond_to { html redirect…; json head :forbidden }` down to a one-liner `redirect_to @todo, alert: "…" unless @todo.user_id == Current.user.id`.
 3. **Corrected the redirect target.** The original used `redirect_back fallback_location: todos_path`, whose result depends on the `Referer` header. I changed it to `redirect_to @todo` to match the existing `update`/`create` style and keep the controller test deterministic.
-4. **Added a correctness note** that `require_owner` must be declared *after* `set_todo`, so `@todo` is loaded before the owner check runs.
+4. **Added a correctness note** that `require_owner` must be declared _after_ `set_todo`, so `@todo` is loaded before the owner check runs.
 
 I deliberately **kept** two things a reviewer might have trimmed: explicit `done: false` in the fixtures (so the assertions are obvious), and a single inline `before_action` guard instead of pulling in Pundit/CanCanCan — one rule doesn't justify an authorization gem. I **declined** two further suggestions as out of scope for this slice: preloading `:user` in `index` to avoid an N+1, and exempting `/hello` from login.
 
@@ -260,3 +260,20 @@ _Green_ (after adding the validation):
 
 Full suite stays green — no regressions (this count includes the authentication feature already on
 `hw5`): `bin/rails test` → `25 runs, 72 assertions, 0 failures`.
+
+# Part 4
+
+Turbo Streams are a way to modify webpages with small fragments of html instead of having to download the entire page's worth of html and re-rendering. Claude said that the seven actions were append, prepend, replace, update, remove, before, and after, and I verified this in the [handbook](https://turbo.hotwired.dev/handbook/streams).
+The MIME type tells the browser and server how to interpret the bytes they exchange with each other. In our case, it is text/vnd.turbo-stream.html, which means human readable _text_, vnd (not a standard), turbo-stream document with an HTML payload.
+The matching view file for toggle_priority action on TodosController is app/views/todos/toggle_priority.turbo_stream.erb, matching Rails' view-resolution rule: app/views/<controller>/<action>.<format>.<handler>. The server uses this to generate the stream of bytes that the browser uses to update the html.
+
+As a user, I want to be able to label some todos as higher priority so that I know to prioritize them and they do not get buried. By using Turbo Streams, the website will be more seamless than if it reloaded every time we update a priority.
+Goals:
+Todo gets a high_priority boolean attribute.
+On the todos index, every row has a visible toggle (star icon (grey for not clicked, yellow for important), showing the current priority state for that todo.
+Clicking the toggle sends a request that flips the priority and returns a Turbo Stream that
+updates only that row (or only the toggle button). The rest of the page must not re-render.
+Verified in Chrome / Firefox DevTools, Network tab: the response Content-Type is
+text/vnd.turbo-stream.html , and the request Accept header includes the same MIME
+type.
+At least one automated test covers the toggle.
