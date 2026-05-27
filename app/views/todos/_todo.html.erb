@@ -4,4 +4,15 @@
     <%= todo.description %>
   </p>
 
+  <% label = todo.high_priority? ? "Remove high priority" : "Mark as high priority" %>
+  <div>
+    <%= button_to toggle_priority_todo_path(todo),
+          method: :patch,
+          title: label,
+          aria: { label: label },
+          form: { style: "display: inline" } do %>
+      <span style="color: <%= todo.high_priority? ? "gold" : "gray" %>; font-size: 1.5rem; line-height: 1;">&#9733;</span>
+    <% end %>
+    <%= todo.high_priority? ? "High priority" : "Normal" %>
+  </div>
 </div>

@@ -1,0 +1,4 @@
+<%# Replaces only this todo's row (targeted by dom_id) with the re-rendered
+    _todo partial reflecting the new high_priority state. The rest of the
+    index is untouched. %>
+<%= turbo_stream.replace @todo %>

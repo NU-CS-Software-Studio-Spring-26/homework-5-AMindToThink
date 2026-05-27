@@ -1,0 +1,22 @@
+.env
+.env.*
+config/master.key
+config/credentials/*.key
+tmp/
+log/
+storage/
+node_modules/
+
+# Project-specific: this repo ships a real Kamal secrets file
+.kamal/secrets
+
+# Project-specific: encrypted credentials blob (no value for the AI to read)
+config/credentials.yml.enc
+
+# Project-specific: SQLite databases may contain real data
+*.sqlite3
+*.sqlite3-*
+
+# Project-specific: private keys and certificates
+*.pem
+*.key

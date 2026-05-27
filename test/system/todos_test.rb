@@ -3,6 +3,12 @@ require "application_system_test_case"
 class TodosTest < ApplicationSystemTestCase
   setup do
     @todo = todos(:one)
+    # auth is now required app-wide; log in through the UI before each test
+    visit new_session_path
+    fill_in "email_address", with: users(:one).email_address
+    fill_in "password", with: "password"
+    click_on "Sign in"
+    assert_selector "h1", text: "Todos" # wait for the post-login redirect to land
   end
 
   test "visiting the index" do
@@ -37,5 +43,19 @@ class TodosTest < ApplicationSystemTestCase
     click_on "Destroy this todo", match: :first
 
     assert_text "Todo was successfully destroyed"
+  end
+
+  test "toggling high priority updates the row in place via Turbo Stream" do
+    visit todos_url
+
+    # Row starts at grey/"Normal"; clicking the star toggles it.
+    within "#todo_#{@todo.id}" do
+      click_button "Mark as high priority"
+    end
+
+    # Turbo replaced ONLY this row: its toggle now offers to remove priority,
+    # which is only true if the row re-rendered in place (no full reload).
+    assert_selector "#todo_#{@todo.id} button[title='Remove high priority']"
+    assert_selector "#todo_#{@todo.id}", text: "High priority"
   end
 end

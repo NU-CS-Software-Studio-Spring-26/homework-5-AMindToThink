@@ -1,5 +1,11 @@
 Rails.application.routes.draw do
-  resources :todos
+  resource :session
+  resources :passwords, param: :token
+  resources :todos do
+    member do
+      patch :toggle_priority
+    end
+  end
   get '/hello', to: 'todos#hello'
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -12,5 +18,5 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  # root "posts#index"
+  root "todos#index"
 end

@@ -1,5 +1,5 @@
 class TodosController < ApplicationController
-  before_action :set_todo, only: %i[ show edit update destroy ]
+  before_action :set_todo, only: %i[ show edit update destroy toggle_priority ]
 
   # GET /todos or /todos.json
   def index
@@ -54,6 +54,20 @@ class TodosController < ApplicationController
     respond_to do |format|
       format.html { redirect_to todos_path, notice: "Todo was successfully destroyed.", status: :see_other }
       format.json { head :no_content }
+    end
+  end
+
+  # PATCH /todos/1/toggle_priority
+  # Flips the high_priority flag and answers with a Turbo Stream so only this
+  # todo's row re-renders (no full page reload). The new value is computed
+  # server-side, never read from params, so high_priority stays out of
+  # mass-assignment (todo_params still permits only :description).
+  def toggle_priority
+    @todo.update!(high_priority: !@todo.high_priority)
+
+    respond_to do |format|
+      format.turbo_stream # renders app/views/todos/toggle_priority.turbo_stream.erb
+      format.html { redirect_to todos_path, notice: "Priority updated." }
     end
   end
 
