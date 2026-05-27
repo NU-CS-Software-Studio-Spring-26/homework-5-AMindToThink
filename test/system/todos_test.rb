@@ -44,4 +44,18 @@ class TodosTest < ApplicationSystemTestCase
 
     assert_text "Todo was successfully destroyed"
   end
+
+  test "toggling high priority updates the row in place via Turbo Stream" do
+    visit todos_url
+
+    # Row starts at grey/"Normal"; clicking the star toggles it.
+    within "#todo_#{@todo.id}" do
+      click_button "Mark as high priority"
+    end
+
+    # Turbo replaced ONLY this row: its toggle now offers to remove priority,
+    # which is only true if the row re-rendered in place (no full reload).
+    assert_selector "#todo_#{@todo.id} button[title='Remove high priority']"
+    assert_selector "#todo_#{@todo.id}", text: "High priority"
+  end
 end
