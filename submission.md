@@ -277,3 +277,7 @@ Verified in Chrome / Firefox DevTools, Network tab: the response Content-Type is
 text/vnd.turbo-stream.html , and the request Accept header includes the same MIME
 type.
 At least one automated test covers the toggle.
+
+**Part 4 pull request:** [#1 — Part 4: Mark as high priority (Turbo Streams toggle)](https://github.com/NU-CS-Software-Studio-Spring-26/homework-5-AMindToThink/pull/1) — the PR description contains the Story, Plan (3 slices), Tests (red→green + full/system suites), and Things I rejected from the AI.
+
+Part 4 commits: [86f1dcd](https://github.com/NU-CS-Software-Studio-Spring-26/homework-5-AMindToThink/commit/86f1dcd) (migration + `high_priority` column), [958d758](https://github.com/NU-CS-Software-Studio-Spring-26/homework-5-AMindToThink/commit/958d758) (route + `toggle_priority` action + `toggle_priority.turbo_stream.erb` + controller test), [7a2e584](https://github.com/NU-CS-Software-Studio-Spring-26/homework-5-AMindToThink/commit/7a2e584) (grey/gold ★ toggle button in `_todo.html.erb` + system test).
