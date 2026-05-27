@@ -46,4 +46,29 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to todos_url
   end
+
+  # --- Part 4: high-priority Turbo Streams toggle ---
+
+  test "toggle_priority flips the flag and responds with a Turbo Stream" do
+    assert_not @todo.high_priority, "fixture should start not high priority"
+
+    patch toggle_priority_todo_url(@todo),
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+    # The story's hard requirement: prove the response is a Turbo Stream,
+    # not plain HTML.
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+    assert @todo.reload.high_priority, "toggling should flip high_priority on"
+
+    # And it must replace ONLY this row, targeting its dom_id.
+    assert_match %r{<turbo-stream action="replace" target="todo_#{@todo.id}">},
+                 response.body
+  end
+
+  test "toggle_priority falls back to an HTML redirect for non-Turbo requests" do
+    patch toggle_priority_todo_url(@todo)
+
+    assert_redirected_to todos_url
+    assert @todo.reload.high_priority
+  end
 end
