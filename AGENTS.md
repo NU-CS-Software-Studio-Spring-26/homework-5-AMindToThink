@@ -8,6 +8,8 @@
   JS through importmap, assets through Propshaft. ERB views; JSON via JBuilder.
 - Tests: Minitest (Rails default) with fixtures; system tests use
   `ActionDispatch::SystemTestCase` driven by headless Chrome (Selenium).
+- Authentication: Rails 8 built-in (`bcrypt` / `has_secure_password`); `User`/`Session`/`Current`
+  models, login required app-wide.
 
 ## Commands
 - Setup:         `bin/setup`
@@ -24,9 +26,16 @@
 - Strong params use Rails 8 `params.expect(...)` (e.g. `params.expect(todo: [:description])`).
 - Shared/row partials live in `app/views/todos/` (`_todo.html.erb`, `_form.html.erb`); each
   row is wrapped in `<div id="<%= dom_id todo %>">`, which is the Turbo Stream target.
-- No authentication/authorization layer exists: no auth gems are active (the only `bcrypt`
-  reference is commented out), no `User`/session model, no auth `before_action`s, no login
-  routes. Treat all actions as open; don't assume a `current_user`.
+- Authentication & authorization live in controller `before_action`s. Rails 8 built-in auth
+  (`include Authentication` in `ApplicationController`) runs `require_authentication` app-wide, so
+  login is required unless an action opts out via `allow_unauthenticated_access`. The logged-in
+  user is `Current.user` (there is **no** `current_user` helper); the login form is
+  `new_session_path`. Per-resource authorization (e.g. owner-only actions) belongs in controller
+  `before_action`s, not the views or models.
+- Tests must authenticate: controller/integration tests call `sign_in_as(users(:one))` (helper in
+  `test/test_helpers/session_test_helper.rb`); system tests log in through the UI
+  (`visit new_session_path`, fill `email_address`/`password`, click "Sign in") then wait for the
+  post-login page. User fixtures `one`/`two` use password `"password"`.
 
 ## Don'ts
 - No new gems without approval — keep the Gemfile to Rails 8 defaults.
@@ -34,5 +43,5 @@
 - Never `skip_before_action :verify_authenticity_token`, and never disable CSRF or strong params.
 - Don't hand-edit `db/schema.rb`; change the schema only through reversible migrations
   (`bin/rails generate migration`).
-- Don't seed data outside `db/seeds.rb`, and keep the schema scoped to the `todos` table
-  (don't import models/migrations from other projects).
+- Don't seed data outside `db/seeds.rb`, and keep the schema scoped to this app's tables
+  (`todos` plus the auth `users`/`sessions`); don't import models/migrations from other projects.
