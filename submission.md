@@ -197,3 +197,66 @@ My prompt: "Please implement part 1 only, then commit, and put the link to the c
 Verified green before committing: `bin/rails test` → 19 runs, 59 assertions, 0 failures; `bin/rails test:system` → 4 runs, 8 assertions, 0 failures.
 
 Commit: [`282fdff`](https://github.com/NU-CS-Software-Studio-Spring-26/homework-5-AMindToThink/commit/282fdff6f521a1df51d75d1b11e86c659699f7f9) on `hw5`. (The link resolves once the branch is pushed.)
+
+## Bad → good prompt rewrite
+
+The deliberately bad prompt names no bug, no file, no definition of "done," and no test — so the
+assistant has to guess _which_ issue you mean and _how_ to fix it, and you can't tell whether the
+result is right. The real rough edge I targeted: `app/models/todo.rb` had no validations and the
+`description` column has no `null: false` constraint, so blank (and arbitrarily long) descriptions
+saved with no complaint, and the error block in `app/views/todos/_form.html.erb` was unreachable
+dead code.
+
+### Bad prompt
+
+> fix the bug in todos
+
+### Good prompt
+
+> `app/models/todo.rb` has no validation. It should check that each todo is not empty and that the
+> contents are less than 500 characters, but at the moment it allows empty todos. Please edit
+> `todo.rb` and create and run tests to ensure that it is no longer possible to save invalid todos.
+> Use red/green tests.
+
+**How the good prompt covers the required structure:**
+
+1. **Context (file paths):** names `app/models/todo.rb` as the model to change; the proof lives in
+   `test/models/todo_test.rb`.
+2. **Task (one specific change):** add validations so an empty description and a description over
+   500 characters are both rejected.
+3. **Expected vs. actual:** _expected_ — invalid todos can't be saved; _actual_ — "it allows empty
+   todos" (an empty/`nil` description saved cleanly because the model had no validations and the
+   `description` column has no `null: false` constraint). No stack trace — a silent data-quality bug.
+4. **Constraints / pattern:** stay in `app/models/todo.rb`; use the project's existing **Minitest**
+   framework (per `AGENTS.md`, no new gems); follow a red→green TDD loop.
+5. **Done when:** "create and run tests to ensure that it is no longer possible to save invalid
+   todos" — a Minitest model spec that fails before the change and passes after.
+
+**Result of running the good prompt.** One line added to `app/models/todo.rb`:
+
+```ruby
+validates :description, presence: true, length: { maximum: 500 }
+```
+
+New `test/models/todo_test.rb` covers: blank, `nil`, and > 500-character descriptions are rejected;
+exactly 500 characters and a normal description are accepted; and an invalid todo cannot be
+persisted.
+
+_Red_ (before the validation) — `bin/rails test test/models/todo_test.rb`:
+
+```
+6 runs, 7 assertions, 4 failures, 0 errors, 0 skips
+TodoTest#test_is_invalid_with_a_blank_description: Expected true to be nil or false
+TodoTest#test_cannot_persist_an_invalid_todo: `Todo.count` didn't change by 0, but by 1.
+TodoTest#test_is_invalid_when_description_exceeds_500_characters: Expected true to be nil or false
+TodoTest#test_is_invalid_with_a_nil_description: Expected true to be nil or false
+```
+
+_Green_ (after adding the validation):
+
+```
+6 runs, 13 assertions, 0 failures, 0 errors, 0 skips
+```
+
+Full suite stays green — no regressions (this count includes the authentication feature already on
+`hw5`): `bin/rails test` → `25 runs, 72 assertions, 0 failures`.
