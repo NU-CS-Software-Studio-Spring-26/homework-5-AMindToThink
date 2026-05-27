@@ -3,6 +3,7 @@ require "test_helper"
 class TodosControllerTest < ActionDispatch::IntegrationTest
   setup do
     @todo = todos(:one)
+    sign_in_as(users(:one)) # auth is now required app-wide
   end
 
   test "should get index" do

@@ -3,6 +3,12 @@ require "application_system_test_case"
 class TodosTest < ApplicationSystemTestCase
   setup do
     @todo = todos(:one)
+    # auth is now required app-wide; log in through the UI before each test
+    visit new_session_path
+    fill_in "email_address", with: users(:one).email_address
+    fill_in "password", with: "password"
+    click_on "Sign in"
+    assert_selector "h1", text: "Todos" # wait for the post-login redirect to land
   end
 
   test "visiting the index" do
